@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Form - Serverless Version</title>
+    <style>
+      :root {
+        --primary-color: #4caf50;
+        --error-color: #f44336;
+        --text-color: #333;
+        --border-radius: 8px;
+        --transition: all 0.3s ease;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: #f5f5f5;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: white;
+        padding: 30px;
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+        color: var(--primary-color);
+        margin-bottom: 30px;
+        font-size: 2.5em;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #555;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: var(--border-radius);
+        font-size: 16px;
+        transition: var(--transition);
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+      }
+
+      .error {
+        color: var(--error-color);
+        font-size: 14px;
+        margin-top: 5px;
+        display: none;
+      }
+
+      button {
+        width: 100%;
+        padding: 14px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius);
+        font-size: 16px;
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+      }
+
+      button:hover {
+        background-color: #45a049;
+        transform: translateY(-1px);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Loading spinner */
+      .spinner {
+        display: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      @keyframes spin {
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .modal.show {
+        opacity: 1;
+      }
+
+      .modal-content {
+        background-color: white;
+        margin: 15% auto;
+        padding: 30px;
+        border-radius: var(--border-radius);
+        width: 90%;
+        max-width: 500px;
+        position: relative;
+        transform: translateY(-50px);
+        transition: transform 0.3s ease;
+      }
+
+      .modal.show .modal-content {
+        transform: translateY(0);
+      }
+
+      .close {
+        position: absolute;
+        right: 20px;
+        top: 15px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .close:hover {
+        color: var(--text-color);
+      }
+
+      .success-message {
+        color: var(--primary-color);
+        text-align: center;
+        font-size: 18px;
+      }
+
+      .error-message {
+        color: var(--error-color);
+        text-align: center;
+        font-size: 18px;
+      }
+
+      /* Real-time validation indicators */
+      .validation-icon {
+        position: absolute;
+        right: 10px;
+        top: 40px;
+        display: none;
+      }
+
+      .validation-icon.valid::before {
+        content: "✓";
+        color: var(--primary-color);
+      }
+
+      .validation-icon.invalid::before {
+        content: "✗";
+        color: var(--error-color);
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 20px;
+          margin: 20px auto;
+        }
+
+        h1 {
+          font-size: 2em;
+        }
+
+        input {
+          padding: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Contact Us</h1>
+      <form id="contactForm">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            placeholder="Enter your full name"
+            autocomplete="name"
+            required
+          />
+          <span class="validation-icon"></span>
+          <div class="error" id="nameError"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Enter your email address"
+            autocomplete="email"
+            required
+          />
+          <span class="validation-icon"></span>
+          <div class="error" id="emailError"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="zipcode">ZIP Code</label>
+          <input
+            type="text"
+            id="zipcode"
+            name="zipcode"
+            placeholder="Enter your ZIP code (e.g., 12345)"
+            autocomplete="postal-code"
+            required
+            maxlength="10"
+          />
+          <span class="validation-icon"></span>
+          <div class="error" id="zipcodeError"></div>
+        </div>
+
+        <button type="submit">
+          <span class="button-text">Submit</span>
+          <div class="spinner"></div>
+        </button>
+      </form>
+    </div>
+
+    <div id="responseModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="modalMessage"></p>
+      </div>
+    </div>
+
+    <script>
+      class ZipCodeValidator {
+        constructor() {
+          this.baseUrl = "https://api.zippopotam.us/us/";
+          this.cache = new Map();
+        }
+
+        async validate(zipCode) {
+          // Check cache first
+          if (this.cache.has(zipCode)) {
+            return this.cache.get(zipCode);
+          }
+
+          try {
+            const response = await fetch(`${this.baseUrl}${zipCode}`);
+
+            if (!response.ok) {
+              throw new Error("Invalid ZIP code");
+            }
+
+            const data = await response.json();
+            const result = {
+              valid: true,
+              city: data.places[0]["place name"],
+              state: data.places[0]["state abbreviation"],
+            };
+
+            // Cache the result
+            this.cache.set(zipCode, result);
+            return result;
+          } catch (error) {
+            return {
+              valid: false,
+              error: "Invalid ZIP code or service unavailable",
+            };
+          }
+        }
+      }
+
+      class FormValidator {
+        constructor(formId) {
+          this.form = document.getElementById(formId);
+          this.modal = document.getElementById("responseModal");
+          this.modalMessage = document.getElementById("modalMessage");
+          this.spinner = this.form.querySelector(".spinner");
+          this.buttonText = this.form.querySelector(".button-text");
+          this.zipValidator = new ZipCodeValidator();
+
+          this.validationRules = {
+            name: {
+              pattern: /^[a-zA-Z\s]{2,}$/,
+              message:
+                "Please enter a valid name (at least 2 characters, letters only)",
+            },
+            email: {
+              pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Please enter a valid email address",
+            },
+            zipcode: {
+              pattern: /^\d{5}(-\d{4})?$/,
+              message:
+                "Please enter a valid ZIP code (e.g., 12345 or 12345-6789)",
+            },
+          };
+
+          this.setupEventListeners();
+          this.setupRealTimeValidation();
+        }
+
+        setupEventListeners() {
+          this.form.addEventListener("submit", (e) => this.handleSubmit(e));
+
+          // Modal close handlers
+          document
+            .querySelector(".close")
+            .addEventListener("click", () => this.closeModal());
+          window.addEventListener("click", (e) => {
+            if (e.target === this.modal) this.closeModal();
+          });
+        }
+
+        setupRealTimeValidation() {
+          Object.keys(this.validationRules).forEach((fieldName) => {
+            const input = this.form[fieldName];
+            const validationIcon =
+              input.parentElement.querySelector(".validation-icon");
+
+            input.addEventListener("input", () => {
+              const isValid = this.validateField(fieldName, input.value);
+              this.updateValidationUI(input, isValid);
+              validationIcon.style.display = "block";
+              validationIcon.className =
+                "validation-icon " + (isValid ? "valid" : "invalid");
+            });
+
+            input.addEventListener("focus", () => {
+              const errorElement = document.getElementById(`${fieldName}Error`);
+              errorElement.style.display = "block";
+              errorElement.textContent =
+                this.validationRules[fieldName].message;
+            });
+
+            input.addEventListener("blur", () => {
+              const isValid = this.validateField(fieldName, input.value);
+              if (isValid) {
+                document.getElementById(`${fieldName}Error`).style.display =
+                  "none";
+              }
+            });
+          });
+        }
+
+        validateField(fieldName, value) {
+          return this.validationRules[fieldName].pattern.test(value);
+        }
+
+        updateValidationUI(input, isValid) {
+          const errorElement = document.getElementById(`${input.name}Error`);
+          if (!isValid) {
+            errorElement.style.display = "block";
+            errorElement.textContent = this.validationRules[input.name].message;
+            input.style.borderColor = "var(--error-color)";
+          } else {
+            errorElement.style.display = "none";
+            input.style.borderColor = "var(--primary-color)";
+          }
+        }
+
+        async handleSubmit(e) {
+          e.preventDefault();
+
+          // Validate all fields
+          let isValid = true;
+          Object.keys(this.validationRules).forEach((fieldName) => {
+            const input = this.form[fieldName];
+            const fieldIsValid = this.validateField(fieldName, input.value);
+            this.updateValidationUI(input, fieldIsValid);
+            if (!fieldIsValid) isValid = false;
+          });
+
+          if (!isValid) return;
+
+          // Show loading state
+          this.setLoadingState(true);
+
+          try {
+            const formData = new FormData(this.form);
+            const zipCode = formData.get("zipcode").substring(0, 5);
+            const name = formData.get("name");
+
+            // Validate ZIP code with API
+            const zipValidation = await this.zipValidator.validate(zipCode);
+
+            if (zipValidation.valid) {
+              this.showModal(
+                `Hello ${name}, your ZIP code ${zipCode} is valid and corresponds to ${zipValidation.city}, ${zipValidation.state}.`,
+                true
+              );
+              this.form.reset();
+              // Reset validation UI
+              document.querySelectorAll(".validation-icon").forEach((icon) => {
+                icon.style.display = "none";
+              });
+              document.querySelectorAll("input").forEach((input) => {
+                input.style.borderColor = "#ddd";
+              });
+            } else {
+              this.showModal(zipValidation.error, false);
+            }
+          } catch (error) {
+            this.showModal(
+              "An error occurred while processing your request.",
+              false
+            );
+          } finally {
+            this.setLoadingState(false);
+          }
+        }
+
+        setLoadingState(loading) {
+          this.spinner.style.display = loading ? "block" : "none";
+          this.buttonText.style.display = loading ? "none" : "block";
+          this.form.querySelector("button").disabled = loading;
+        }
+
+        showModal(message, success) {
+          this.modalMessage.textContent = message;
+          this.modalMessage.className = success
+            ? "success-message"
+            : "error-message";
+          this.modal.style.display = "block";
+          setTimeout(() => this.modal.classList.add("show"), 10);
+        }
+
+        closeModal() {
+          this.modal.classList.remove("show");
+          setTimeout(() => (this.modal.style.display = "none"), 300);
+        }
+      }
+
+      // Initialize form validator
+      new FormValidator("contactForm");
+    </script>
+  </body>
+</html>
